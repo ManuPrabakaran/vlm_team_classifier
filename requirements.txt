@@ -1,0 +1,13 @@
+torch
+torchvision
+transformers
+accelerate
+Pillow
+numpy
+scikit-learn
+opencv-python
+ultralytics
+yt-dlp
+pytest
+pytest-cov
+huggingface-hub
