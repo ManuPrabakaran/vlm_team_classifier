@@ -11,3 +11,4 @@ yt-dlp
 pytest
 pytest-cov
 huggingface-hub
+deep-sort-realtime
