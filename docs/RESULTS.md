@@ -23,15 +23,13 @@ maps to which team) is resolved by trying both assignments and taking the higher
 
 | Clip | Match-up | Accuracy | Valid detections | Difficulty |
 |------|----------|----------|-----------------|------------|
-| clip1_easy | Celtics vs Heat | **89.1%** (82.6% in ~10% of runs) | 46 | Easy — white/green vs black/red |
-| clip2_hard | Spurs vs Grizzlies | **54.0%** (stable) | 50 | Hard — light blue vs dark navy |
-| clip3_edge | Cavs vs Knicks Christmas | **90.6% or 81.2%** (~50/50 across runs) | 32 | Edge — navy throwback vs white/orange |
+| clip1_easy | Celtics vs Heat | **87.2% ± 3.0%** (max 89.1%) | 46 | Easy — white/green vs black/red |
+| clip2_hard | Spurs vs Grizzlies | **52.8% ± 1.8%** (max 54.0%) | 50 | Hard — light blue vs dark navy |
+| clip3_edge | Cavs vs Knicks Christmas | **86.9% ± 4.6%** (max 90.6%) | 32 | Edge — navy throwback vs white/orange |
 
-> **Non-determinism note**: `KMeans` has no `random_state`. clip3 alternates between exactly
-> two states (90.6% / 81.2%) almost every other run — a bimodal distribution indicating two
-> equally-attractive local minima in color space. clip1 is mostly stable but drops to 82.6%
-> in roughly 1 in 10 runs. clip2 is stable at 54% because K-Means consistently fails
-> regardless of initialization.
+> Means and std over 10 runs. `KMeans` has no `random_state` so single-run numbers are
+> unreliable. clip3 has the highest variance (4.6%), flip-flopping between 81.2% and 90.6%.
+> clip2 has the lowest variance (1.8%) but is consistently near random chance.
 
 ---
 
@@ -47,11 +45,11 @@ To get reliable numbers, K-Means was run 10 times per clip and averaged.
 
 | Clip | Mean accuracy | Std | Min | Max |
 |------|--------------|-----|-----|-----|
-| clip1_easy | TBD | TBD | TBD | TBD |
-| clip2_hard | TBD | TBD | TBD | TBD |
-| clip3_edge | TBD | TBD | TBD | TBD |
+| clip1_easy | 87.2% | 3.0% | 82.6% | 89.1% |
+| clip2_hard | 52.8% | 1.8% | 50.0% | 54.0% |
+| clip3_edge | 86.9% | 4.6% | 81.2% | 90.6% |
 
-> Run the stability analysis cell in `notebooks/exploration.ipynb` to populate this table.
+> 10 runs per clip. Full stability data in `results/metrics.json`.
 
 The three clips fall into three distinct regimes:
 

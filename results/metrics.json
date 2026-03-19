@@ -3,17 +3,35 @@
     "clip1_easy": {
       "accuracy": 0.891,
       "n_detections": 46,
-      "description": "Celtics vs Heat - contrasting jerseys (white/green vs black/red)"
+      "description": "Celtics vs Heat - contrasting jerseys (white/green vs black/red)",
+      "stability_10runs": {
+        "mean": 0.872,
+        "std": 0.030,
+        "min": 0.826,
+        "max": 0.891
+      }
     },
     "clip2_hard": {
-      "accuracy": 0.540,
+      "accuracy": 0.54,
       "n_detections": 50,
-      "description": "Spurs vs Grizzlies - similar colors (light blue vs dark navy)"
+      "description": "Spurs vs Grizzlies - similar colors (light blue vs dark navy)",
+      "stability_10runs": {
+        "mean": 0.528,
+        "std": 0.018,
+        "min": 0.500,
+        "max": 0.540
+      }
     },
     "clip3_edge": {
       "accuracy": 0.906,
       "n_detections": 32,
-      "description": "Cavs vs Knicks Christmas - alternate jerseys (navy throwback vs white/orange)"
+      "description": "Cavs vs Knicks Christmas - alternate jerseys (navy throwback vs white/orange)",
+      "stability_10runs": {
+        "mean": 0.869,
+        "std": 0.046,
+        "min": 0.812,
+        "max": 0.906
+      }
     }
   }
 }
