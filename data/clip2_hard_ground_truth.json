@@ -1,0 +1,702 @@
+[
+  {
+    "frame_idx": 0,
+    "timestamp": 1.0,
+    "labels": [
+      {
+        "bbox": [
+          470,
+          308,
+          545,
+          433
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          1022,
+          238,
+          1064,
+          360
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          256,
+          647,
+          324,
+          720
+        ],
+        "team_id": null,
+        "valid": false
+      },
+      {
+        "bbox": [
+          369,
+          196,
+          420,
+          311
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          851,
+          418,
+          908,
+          571
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          563,
+          210,
+          623,
+          336
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          123,
+          636,
+          204,
+          720
+        ],
+        "team_id": null,
+        "valid": false
+      },
+      {
+        "bbox": [
+          821,
+          296,
+          906,
+          446
+        ],
+        "team_id": 0,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 3,
+    "timestamp": 4.0,
+    "labels": [
+      {
+        "bbox": [
+          259,
+          293,
+          315,
+          427
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          352,
+          286,
+          408,
+          419
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          570,
+          286,
+          626,
+          429
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          857,
+          415,
+          910,
+          553
+        ],
+        "team_id": -1,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 6,
+    "timestamp": 7.0,
+    "labels": [
+      {
+        "bbox": [
+          369,
+          303,
+          443,
+          441
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          527,
+          289,
+          602,
+          451
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          451,
+          252,
+          541,
+          405
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          888,
+          441,
+          949,
+          588
+        ],
+        "team_id": -1,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 9,
+    "timestamp": 10.0,
+    "labels": [
+      {
+        "bbox": [
+          354,
+          353,
+          442,
+          504
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          812,
+          300,
+          951,
+          482
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          265,
+          247,
+          343,
+          408
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          908,
+          446,
+          980,
+          599
+        ],
+        "team_id": -1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          470,
+          321,
+          539,
+          479
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          571,
+          183,
+          623,
+          335
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          432,
+          222,
+          485,
+          399
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          328,
+          189,
+          386,
+          303
+        ],
+        "team_id": 0,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 12,
+    "timestamp": 13.0,
+    "labels": [
+      {
+        "bbox": [
+          231,
+          371,
+          296,
+          568
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          300,
+          252,
+          374,
+          414
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          629,
+          465,
+          705,
+          615
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          887,
+          505,
+          958,
+          667
+        ],
+        "team_id": -1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          965,
+          307,
+          1036,
+          473
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          783,
+          360,
+          850,
+          538
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          601,
+          249,
+          690,
+          410
+        ],
+        "team_id": 1,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 15,
+    "timestamp": 16.0,
+    "labels": [
+      {
+        "bbox": [
+          5,
+          303,
+          97,
+          520
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          432,
+          380,
+          513,
+          556
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          378,
+          264,
+          441,
+          390
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          414,
+          207,
+          559,
+          354
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          645,
+          284,
+          773,
+          467
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          748,
+          507,
+          826,
+          610
+        ],
+        "team_id": -1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          780,
+          329,
+          887,
+          585
+        ],
+        "team_id": null,
+        "valid": false
+      }
+    ]
+  },
+  {
+    "frame_idx": 18,
+    "timestamp": 19.0,
+    "labels": [
+      {
+        "bbox": [
+          284,
+          430,
+          418,
+          656
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          764,
+          192,
+          839,
+          343
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          474,
+          391,
+          558,
+          581
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          151,
+          197,
+          231,
+          316
+        ],
+        "team_id": null,
+        "valid": false
+      },
+      {
+        "bbox": [
+          588,
+          476,
+          660,
+          609
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          373,
+          250,
+          465,
+          434
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          696,
+          516,
+          756,
+          611
+        ],
+        "team_id": null,
+        "valid": false
+      },
+      {
+        "bbox": [
+          986,
+          202,
+          1099,
+          327
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          285,
+          319,
+          364,
+          457
+        ],
+        "team_id": 0,
+        "valid": true
+      }
+    ]
+  },
+  {
+    "frame_idx": 21,
+    "timestamp": 22.0,
+    "labels": [
+      {
+        "bbox": [
+          652,
+          273,
+          770,
+          436
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          823,
+          309,
+          920,
+          486
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          1052,
+          143,
+          1149,
+          295
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          1215,
+          641,
+          1279,
+          720
+        ],
+        "team_id": null,
+        "valid": false
+      }
+    ]
+  },
+  {
+    "frame_idx": 24,
+    "timestamp": 25.0,
+    "labels": [
+      {
+        "bbox": [
+          744,
+          353,
+          849,
+          536
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          231,
+          400,
+          318,
+          613
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          459,
+          214,
+          506,
+          324
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          432,
+          473,
+          503,
+          612
+        ],
+        "team_id": -1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          375,
+          359,
+          445,
+          522
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          555,
+          307,
+          638,
+          470
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          643,
+          256,
+          735,
+          393
+        ],
+        "team_id": null,
+        "valid": false
+      }
+    ]
+  },
+  {
+    "frame_idx": 27,
+    "timestamp": 28.0,
+    "labels": [
+      {
+        "bbox": [
+          560,
+          220,
+          682,
+          382
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          750,
+          173,
+          844,
+          321
+        ],
+        "team_id": 1,
+        "valid": true
+      },
+      {
+        "bbox": [
+          309,
+          243,
+          409,
+          461
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          544,
+          527,
+          609,
+          613
+        ],
+        "team_id": null,
+        "valid": false
+      },
+      {
+        "bbox": [
+          240,
+          234,
+          324,
+          397
+        ],
+        "team_id": 0,
+        "valid": true
+      },
+      {
+        "bbox": [
+          266,
+          469,
+          393,
+          654
+        ],
+        "team_id": 1,
+        "valid": true
+      }
+    ]
+  }
+]
