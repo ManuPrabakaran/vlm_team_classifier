@@ -1,0 +1,19 @@
+{
+  "baseline_kmeans": {
+    "clip1_easy": {
+      "accuracy": 0.891,
+      "n_detections": 46,
+      "description": "Celtics vs Heat - contrasting jerseys (white/green vs black/red)"
+    },
+    "clip2_hard": {
+      "accuracy": 0.540,
+      "n_detections": 50,
+      "description": "Spurs vs Grizzlies - similar colors (light blue vs dark navy)"
+    },
+    "clip3_edge": {
+      "accuracy": 0.906,
+      "n_detections": 32,
+      "description": "Cavs vs Knicks Christmas - alternate jerseys (navy throwback vs white/orange)"
+    }
+  }
+}
