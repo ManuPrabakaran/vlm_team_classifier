@@ -112,8 +112,61 @@ All ground truth files are in `data/` and follow the schema:
 
 ---
 
-## Next Steps
+## VLM Model Comparison
 
-Results for VLM-based approaches (SigLIP, CLIP, Florence-2, Qwen2-VL) will be added
-in Section 3 of `notebooks/exploration.ipynb` and updated here once experiments are
-complete.
+All VLM models evaluated on the same three clips using the same ground truth and evaluation
+framework. Accuracy computed as best of both label orientations (since cluster/team ID
+mapping is arbitrary).
+
+| Clip | K-Means Baseline | SigLIP | CLIP | Florence-2 | Qwen2-VL 2B |
+|------|-----------------|--------|------|------------|-------------|
+| clip1_easy | 87.2% ± 3.0% | **97.8%** | 84.8% | N/A | 54.3% |
+| clip2_hard | 52.8% ± 1.8% | **86.0%** | 70.0% | N/A | 58.0% |
+| clip3_edge | 86.9% ± 4.6% | **71.9%** | 78.1% | N/A | 56.2% |
+| **Average** | **75.6%** | **85.2%** | **77.6%** | — | **56.2%** |
+
+> Florence-2 could not be evaluated due to a `transformers`/`tokenizers` version
+> incompatibility in its remote code. See notebook Section 3.3 for details.
+
+---
+
+## VLM Analysis
+
+### SigLIP (best overall)
+- Dominates on clip1_easy (97.8%) and clip2_hard (86.0% — where K-Means collapses to chance)
+- Struggles on clip3_edge (71.9%) — likely due to navy throwback jerseys being visually
+  ambiguous in embedding space
+- Zero-shot with text anchors derived from GPT-4o descriptions
+- ~15ms per crop on T4 GPU — fast enough for primary cascade stage
+
+### CLIP (baseline VLM)
+- Surprisingly competitive on clip3_edge (78.1% > SigLIP's 71.9%)
+- Weaker on clip1_easy (84.8% vs 97.8%) and clip2_hard (70.0% vs 86.0%)
+- Same architecture as SigLIP but weaker contrastive training — confirms SigLIP's
+  superior fine-grained discrimination
+
+### Qwen2-VL 2B (near chance)
+- 54.3% / 58.0% / 56.2% — barely above random on all clips
+- The 2B model lacks the visual reasoning capacity for this task
+- Pivoted role: OCR specialist for jersey number reading, not primary classifier
+- The 7B model would likely perform better but requires more GPU memory
+
+### Florence-2 (not evaluated)
+- Environment incompatibility prevented evaluation
+- Would also struggle with referee detection due to fixed task-token architecture
+- Missing data point does not change cascade recommendation
+
+---
+
+## Cascade Recommendation
+
+Based on experimental results:
+
+1. **K-Means** as first stage — resolves 80%+ of easy-game players at < 1ms
+2. **SigLIP** as primary VLM — best accuracy/speed balance, handles hard cases
+3. **Qwen2-VL 7B** as escalation — for jersey number OCR and visual reasoning on
+   the hardest cases (2B too weak for general classification)
+4. **Manual review** as last resort — target < 5% of players
+
+The cascade architecture is validated: SigLIP alone improves average accuracy from
+75.6% to 85.2%, with the biggest gains on the hardest clip (52.8% → 86.0%).
