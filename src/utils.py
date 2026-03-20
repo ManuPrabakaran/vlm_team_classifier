@@ -130,11 +130,15 @@ def extract_siglip_embedding(crop, model, processor, device=None):
     inputs = processor(images=image, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model.get_image_features(**inputs)
-    emb = outputs[0].cpu()
-    if emb.dim() == 2:  # (num_patches, hidden) — mean pool to get 1D vector
-        emb = emb.mean(dim=0)
-    embedding = emb.numpy()
-    return embedding / np.linalg.norm(embedding)  # L2 normalize
+    # outputs may be a raw tensor (batch, dim) or a model output object
+    # where outputs[0] is last_hidden_state (batch, patches, hidden)
+    if isinstance(outputs, torch.Tensor):
+        emb = outputs.squeeze().cpu().numpy()
+    else:
+        emb = outputs[0].squeeze().cpu().numpy()
+    while emb.ndim > 1:  # mean-pool any extra dims to get 1D vector
+        emb = emb.mean(axis=0)
+    return emb / np.linalg.norm(emb)  # L2 normalize
 
 
 def compute_embedding_distance(embedding, team_profiles):
