@@ -177,9 +177,42 @@ class VLMTeamClassifier:
         """
         Cheap heuristic: group players by x-position into two halves.
 
-        In basketball, teams tend to cluster on opposite sides of the court
-        during half-court offense/defense. This returns a weak prior (0.55-0.65)
-        that helps the composite score without dominating it.
+        Currently weighted at 0.0 in COMPOSITE_WEIGHTS — the infrastructure
+        is built but the signal carries no influence until we can ground it
+        in real positional understanding.
+
+        The naive version (left-half vs right-half of detected players) is
+        unreliable because basketball court positioning is far more complex
+        than a simple spatial split. To make this signal meaningful, we'd
+        need several layers of context:
+
+        1. **Court geometry awareness**: Homography mapping from the camera
+           frame to a standardized court coordinate system. Without this,
+           "left side of the frame" means nothing — camera angle, zoom, and
+           broadcast crop all shift where the midcourt line appears.
+
+        2. **Play state detection**: Court position is only informative
+           during settled half-court play (5v5 offense/defense). During
+           transitions, fast breaks, inbound plays, and free throws,
+           players from both teams intermix spatially. A play-state
+           classifier would gate when this signal is active.
+
+        3. **Role-aware positional priors**: A point guard, a center, and
+           a wing occupy systematically different court regions. If we knew
+           each player's role (via roster metadata or pose estimation),
+           we could build per-role spatial distributions. A center near
+           the paint is expected; a center at the three-point line is
+           unusual and weakens the positional prior.
+
+        4. **Possession tracking**: The offensive team's spatial
+           distribution differs from the defensive team's. Knowing which
+           team has possession (from game clock data, ball tracking, or
+           broadcast graphics) would flip the expected spatial mapping.
+
+        Until these layers exist, this method returns a weak guess at best.
+        The weight is zeroed out so it doesn't pollute the composite score,
+        but the code path remains for future iterations where court-aware
+        features become available.
 
         Returns (team_id, confidence) or (None, 0.0) if too few players.
         """
@@ -220,11 +253,30 @@ class VLMTeamClassifier:
         Returns (team_id, confidence) if the number is unique to one team,
         or (None, 0.0) if not found or ambiguous.
 
-        Note: <1% of per-second frames have a visible jersey number.
-        This signal is most effective paired with temporal consistency:
-        a single successful read locks the player's team for subsequent
-        frames via the track cache. Continuous-frame extraction (not
-        per-second sampling) would increase hit rate significantly.
+        The lookup itself is a trivial dict check — the expensive part is
+        the upstream OCR that produces the number string. At per-second
+        sampling, fewer than 1% of crops show a legible jersey number
+        (player facing away, motion blur, occlusion). Running OCR on every
+        crop would waste compute for a signal that fires rarely.
+
+        The practical strategy: in a continuous-frame pipeline (e.g. 30fps
+        ingestion), opportunistically attempt OCR on a sparse subset of
+        frames — perhaps every 30th frame, or only when a crop's sharpness
+        score exceeds a threshold. When a number IS clearly visible, that
+        single successful read propagates through the temporal cache and
+        locks the player's team assignment for dozens of subsequent frames
+        without any further OCR. One good read at frame 120 can carry
+        through frames 121–150+ at zero marginal cost.
+
+        This makes jersey number lookup high-value despite low per-frame
+        hit rate: the cost is amortized across the temporal window, and
+        the 0.99 confidence of a unique roster match means the lock is
+        rarely overridden by weaker signals.
+
+        Assumes the caller provides number_str from an external OCR system
+        (e.g. SmolVLM2, which is already in the Paloa pipeline for jersey
+        reading). The classifier does not run OCR itself — it only
+        consumes the result.
         """
         if not self.ablation.get("number_lookup", True):
             return (None, 0.0)
