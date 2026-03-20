@@ -5,6 +5,7 @@ from src.config import (
     YOLO_CONFIDENCE,
     YOLO_PERSON_CLASS_ID,
     MODEL_SIGLIP,
+    MODEL_CLIP,
     MODEL_QWEN,
 )
 
@@ -105,6 +106,31 @@ def load_siglip_model(device=None):
     model = AutoModel.from_pretrained(MODEL_SIGLIP).to(device)
     model.eval()
     return model, processor
+
+
+def load_clip_model(device=None):
+    """Load CLIP model and processor from HuggingFace."""
+    device = device or get_device()
+    from transformers import CLIPProcessor, CLIPModel
+    processor = CLIPProcessor.from_pretrained(MODEL_CLIP)
+    model = CLIPModel.from_pretrained(MODEL_CLIP).to(device)
+    model.eval()
+    return model, processor
+
+
+def extract_clip_embedding(crop, model, processor, device=None):
+    """
+    Extract a CLIP visual embedding from a player crop.
+    Returns a 1D numpy array of shape (embedding_dim,).
+    """
+    device = device or get_device()
+    from PIL import Image
+    image = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+    inputs = processor(images=image, return_tensors="pt").to(device)
+    with torch.no_grad():
+        outputs = model.get_image_features(**inputs)
+    emb = outputs.squeeze().cpu().numpy()
+    return emb / np.linalg.norm(emb)  # L2 normalize
 
 
 def load_qwen_model(device=None):

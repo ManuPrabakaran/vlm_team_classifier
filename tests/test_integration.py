@@ -146,10 +146,12 @@ class TestGameDifficultyIntegration:
         bboxes = [[50, 20, 150, 180], [250, 20, 350, 180]]
 
         clf = VLMTeamClassifier()
-        # Mock SigLIP load since torch not available in test env
-        with patch.object(clf, '_ensure_siglip'):
-            with patch.object(clf, '_build_team_profiles'):
-                clf.fit(frame, bboxes)
+        # Mock model loads since torch not available in test env
+        with patch.object(clf, '_ensure_siglip'), \
+             patch.object(clf, '_build_team_profiles'), \
+             patch.object(clf, '_ensure_clip'), \
+             patch.object(clf, '_build_clip_profiles'):
+            clf.fit(frame, bboxes)
 
         assert clf.get_game_difficulty() > 0.7
         assert clf.get_cluster_separation() < CLUSTER_SEPARATION_MIN
