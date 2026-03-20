@@ -130,7 +130,10 @@ def extract_siglip_embedding(crop, model, processor, device=None):
     inputs = processor(images=image, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model.get_image_features(**inputs)
-    embedding = outputs[0].cpu().numpy()
+    emb = outputs[0].cpu()
+    if emb.dim() == 2:  # (num_patches, hidden) — mean pool to get 1D vector
+        emb = emb.mean(dim=0)
+    embedding = emb.numpy()
     return embedding / np.linalg.norm(embedding)  # L2 normalize
 
 
