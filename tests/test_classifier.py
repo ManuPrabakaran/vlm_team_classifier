@@ -400,10 +400,10 @@ class TestCascadeEscalation:
                 result = clf.predict(two_color_frame, two_color_bboxes[0])
                 assert "siglip" in result["method"]
 
-    def test_all_low_falls_to_manual(self, two_color_frame, two_color_bboxes):
+    def test_no_profiles_falls_to_manual(self, two_color_frame, two_color_bboxes):
+        """Without SigLIP team profiles, cascade falls to manual."""
         clf = VLMTeamClassifier(config={
             "kmeans_threshold": 1.0,
-            "siglip_threshold": 1.0,
             "separation_min": 9999.0,
             "ablation": {"court_position": False, "number_lookup": False,
                          "clip_ensemble": False, "temporal_consistency": False},
@@ -411,12 +411,11 @@ class TestCascadeEscalation:
         with patch.object(clf, '_ensure_siglip'):
             with patch.object(clf, '_build_team_profiles'):
                 clf.fit(two_color_frame, two_color_bboxes)
-        clf._team_profiles = {0: np.ones(768), 1: -np.ones(768)}
+        # No team profiles → SigLIP stage skipped → manual fallback
+        clf._team_profiles = {}
 
-        with patch.object(clf, '_ensure_siglip'):
-            with patch.object(clf, '_predict_siglip', return_value=(0, 0.5)):
-                result = clf.predict(two_color_frame, two_color_bboxes[0])
-                assert result["method"] == OUTPUT_METHOD_MANUAL
+        result = clf.predict(two_color_frame, two_color_bboxes[0])
+        assert result["method"] == OUTPUT_METHOD_MANUAL
 
 
 # ── Cascade Stats ──

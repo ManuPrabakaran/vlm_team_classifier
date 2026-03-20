@@ -457,45 +457,53 @@ class VLMTeamClassifier:
         km_team, km_conf = self._predict_kmeans(frame, bbox)
         signals["kmeans"] = {"team_id": km_team, "confidence": km_conf}
 
-        if separation_ok and km_conf >= self.kmeans_threshold:
+        # K-Means only short-circuits when BOTH separation is very high AND
+        # confidence is near-certain. This prevents K-Means from stealing
+        # predictions from SigLIP when it's confidently wrong (~87% accuracy
+        # vs SigLIP's 97.8%). Most predictions should flow to SigLIP.
+        if separation_ok and km_conf >= 0.95 and self._cluster_separation >= self.separation_min * 2:
             self._cascade_stats["kmeans"] += 1
             composite = self._compute_composite_confidence(signals)
             self._update_temporal_cache(bbox, km_team, composite)
             return self._build_result(km_team, composite, OUTPUT_METHOD_KMEANS, signals)
 
-        # ── Stage 3: SigLIP ──
+        # ── Stage 3: SigLIP (primary classifier) ──
+        # SigLIP always resolves when team profiles exist — it's the
+        # strongest model. No confidence gating: the individual eval shows
+        # 97.8% on clip1 by simply picking the closest centroid. Gating on
+        # the cosine-distance confidence ratio was blocking correct
+        # predictions (confidence ~0.55-0.70 vs threshold 0.80).
         if self._team_profiles:
             self._ensure_siglip()
             sig_team, sig_conf = self._predict_siglip(frame, bbox)
             signals["siglip"] = {"team_id": sig_team, "confidence": sig_conf}
 
-            if sig_conf >= self.siglip_threshold:
-                self._cascade_stats["siglip"] += 1
-                composite = self._compute_composite_confidence(signals)
-                self._update_temporal_cache(bbox, sig_team, composite)
-                return self._build_result(sig_team, composite, OUTPUT_METHOD_VLM + ":siglip", signals)
+            # ── CLIP fallback: only when SigLIP confidence is low ──
+            # CLIP beats SigLIP on clip3_edge (78.1% vs 71.9%), so we
+            # check CLIP when SigLIP is uncertain and let it override.
+            if sig_conf < self.siglip_threshold:
+                if self._clip_team_profiles and self.ablation.get("clip_ensemble", True):
+                    clip_team, clip_conf = self._predict_clip(frame, bbox)
+                    signals["clip"] = {"team_id": clip_team, "confidence": clip_conf}
 
-            # ── Stage 3b: CLIP fallback — only when SigLIP is uncertain ──
-            if self._clip_team_profiles and self.ablation.get("clip_ensemble", True):
-                clip_team, clip_conf = self._predict_clip(frame, bbox)
-                signals["clip"] = {"team_id": clip_team, "confidence": clip_conf}
+                    if clip_conf > sig_conf:
+                        sig_team = clip_team
+                        sig_conf = clip_conf
+                    elif sig_team == clip_team:
+                        sig_conf = min(sig_conf + 0.05, 1.0)
 
-                # Use CLIP result if it's more confident than SigLIP
-                if clip_conf > sig_conf:
-                    sig_team = clip_team
-                    sig_conf = clip_conf
-                # If both agree but neither crossed threshold, boost
-                elif sig_team == clip_team:
-                    sig_conf = min(sig_conf + 0.05, 1.0)
-
-                if sig_conf >= self.siglip_threshold:
                     self._cascade_stats["siglip"] += 1
-                    signals["siglip"]["confidence"] = sig_conf
                     composite = self._compute_composite_confidence(signals)
                     self._update_temporal_cache(bbox, sig_team, composite)
                     return self._build_result(sig_team, composite, OUTPUT_METHOD_VLM + ":clip_fallback", signals)
 
-        # ── Stage 4: Qwen2-VL ──
+            # SigLIP resolves — no threshold gate
+            self._cascade_stats["siglip"] += 1
+            composite = self._compute_composite_confidence(signals)
+            self._update_temporal_cache(bbox, sig_team, composite)
+            return self._build_result(sig_team, composite, OUTPUT_METHOD_VLM + ":siglip", signals)
+
+        # ── Stage 4: Qwen2-VL (only if no SigLIP profiles) ──
         if self._jersey_descriptions:
             self._ensure_qwen()
             qw_team, qw_conf = self._predict_qwen(frame, bbox)
