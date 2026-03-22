@@ -118,15 +118,17 @@ All VLM models evaluated on the same three clips using the same ground truth and
 framework. Accuracy computed as best of both label orientations (since cluster/team ID
 mapping is arbitrary).
 
-| Clip | K-Means Baseline | SigLIP | CLIP | Florence-2 | Qwen2-VL 2B |
-|------|-----------------|--------|------|------------|-------------|
-| clip1_easy | 87.2% ± 3.0% | **97.8%** | 84.8% | N/A | 54.3% |
-| clip2_hard | 52.8% ± 1.8% | **86.0%** | 70.0% | N/A | 58.0% |
-| clip3_edge | 86.9% ± 4.6% | **71.9%** | 78.1% | N/A | 56.2% |
-| **Average** | **75.6%** | **85.2%** | **77.6%** | — | **56.2%** |
+| Clip | K-Means Baseline | SigLIP | CLIP | Qwen2-VL 2B |
+|------|-----------------|--------|------|-------------|
+| clip1_easy | 87.2% ± 3.0% | **97.8%** | 84.8% | 54.3% |
+| clip2_hard | 52.8% ± 1.8% | **86.0%** | 70.0% | 58.0% |
+| clip3_edge | 86.9% ± 4.6% | **71.9%** | 78.1% | 56.2% |
+| **Average** | **75.6%** | **85.2%** | **77.6%** | **56.2%** |
 
-> Florence-2 could not be evaluated due to a `transformers`/`tokenizers` version
-> incompatibility in its remote code. See notebook Section 3.3 for details.
+> Florence-2 was excluded from benchmarking due to architectural mismatch: its fixed
+> task-token design (`<OD>`, `<CAPTION>`) has no contrastive embedding space, no
+> confidence signal for cascade routing, and no three-class output mechanism. See
+> [TEAM_CLASSIFICATION_RESEARCH.md](TEAM_CLASSIFICATION_RESEARCH.md) Section 3.4.
 
 ---
 
@@ -151,10 +153,12 @@ mapping is arbitrary).
 - Pivoted role: OCR specialist for jersey number reading, not primary classifier
 - The 7B model would likely perform better but requires more GPU memory
 
-### Florence-2 (not evaluated)
-- Environment incompatibility prevented evaluation
-- Would also struggle with referee detection due to fixed task-token architecture
-- Missing data point does not change cascade recommendation
+### Florence-2 (excluded — architectural mismatch)
+- Fixed task-token architecture (`<OD>`, `<CAPTION>`) cannot produce contrastive embeddings
+  for prototype comparison — the core strategy that makes SigLIP effective
+- No confidence signal for cascade routing (captions are binary, not graded)
+- No three-class mechanism (Team 0 / Team 1 / Referee) without multiple inference passes
+- Excluded from benchmarking; architectural limitations make it a poor fit regardless
 
 ---
 

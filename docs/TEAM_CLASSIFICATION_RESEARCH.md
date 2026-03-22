@@ -125,22 +125,40 @@ embeddings.
 
 **Verdict**: Viable backup, but SigLIP is strictly better for the primary cascade stage.
 
-### 3.4 Florence-2 (Not Evaluated — Environment Incompatibility)
+### 3.4 Florence-2 (Excluded — Architectural Mismatch)
 
-**What happened**: Florence-2 requires `trust_remote_code=True`, which downloads
-`processing_florence2.py` from HuggingFace Hub at runtime. This code accesses
-`tokenizer.additional_special_tokens`, an attribute that was removed/renamed in recent
-`tokenizers` versions. The error occurs regardless of which `transformers`/`tokenizers`
-version combination is installed, because the remote code always downloads the latest version.
+**Why Florence-2 is the wrong tool for this task:**
 
-**Expected performance**: Based on architecture (encoder-decoder, 230M params) and task design
-(dense visual tasks like grounding and segmentation), Florence-2 would likely perform in the
-70-80% range — comparable to CLIP but not competitive with SigLIP.
+Florence-2 is a sequence-to-sequence multimodal model (230M params) designed for *dense
+visual prediction* — object detection, segmentation, grounding, and region captioning via
+fixed task tokens (`<OD>`, `<CAPTION>`, `<GROUNDING>`, etc.). This architecture is
+fundamentally misaligned with team classification for three reasons:
 
-**Additional limitation — referee detection**: Florence-2 uses fixed task tokens
-(`<OD>`, `<CAPTION>`, etc.) rather than open-ended reasoning. It has no natural mechanism
-for three-class classification (Team 0 / Team 1 / Referee). Workarounds — running twice
-with binary prompts or parsing captions for "referee" — double latency or are unreliable.
+1. **No discriminative embedding space.** Unlike SigLIP and CLIP, Florence-2 does not
+   produce contrastive embeddings that can be compared via cosine similarity. It cannot
+   build team prototypes from tipoff frames and then classify subsequent players by
+   distance — the core strategy that makes SigLIP effective. There is no `<CLASSIFY>`
+   task token, so classification must be hacked through captioning (`<CAPTION>` → parse
+   for team keywords) or grounding (`<GROUNDING>` → "player in white jersey"), both of
+   which are indirect, fragile, and slower than native embedding comparison.
+
+2. **No confidence signal for cascade routing.** The cascade architecture depends on each
+   stage producing a calibrated confidence score to decide whether to escalate. SigLIP's
+   cosine similarity and margin provide this naturally. Florence-2's text output has no
+   equivalent — a caption either mentions a color or doesn't, with no graded uncertainty.
+   This makes it unusable as a cascade stage.
+
+3. **No three-class output.** Florence-2 has no mechanism for Team 0 / Team 1 / Referee
+   classification without running inference multiple times with different prompts. This
+   doubles or triples latency for a model that's already slower than SigLIP (~50ms vs
+   ~15ms per crop).
+
+**Why it was not benchmarked:** Beyond the architectural mismatch, Florence-2 requires
+`trust_remote_code=True`, which downloads `processing_florence2.py` from HuggingFace Hub
+at runtime. This remote code depends on `tokenizer.additional_special_tokens`, an attribute
+that broke across `tokenizers` versions. The environment incompatibility prevented evaluation,
+but even if resolved, the architectural limitations above make Florence-2 a poor fit for
+this task. The missing benchmark does not change the cascade recommendation.
 
 **Engineering lesson**: Models depending on `trust_remote_code=True` introduce hidden
 dependencies on remotely-hosted Python files that change without version pinning. For

@@ -96,8 +96,7 @@ pytest tests/ -v -k "not test_kmeans_on_synthetic and not test_cascade_on_synthe
 
 The research notebook (`notebooks/exploration.ipynb`) is designed to run on Google Colab with a T4 GPU. It contains:
 - K-Means baseline evaluation and stability analysis
-- VLM model comparison (SigLIP, CLIP, Florence-2, Qwen2-VL)
+- VLM model comparison (SigLIP, CLIP, Qwen2-VL)
 - Description generation pipeline using GPT-4o
 - Cascade architecture analysis and recommendations
-
-**Note**: Florence-2 and Qwen2-VL require different `transformers` versions. The notebook uses a `RUN_MODEL` toggle in Cell 2 — set to `"florence"` or `"qwen"` and restart the runtime to switch.
+- Improved K-Means via randomized hyperparameter search

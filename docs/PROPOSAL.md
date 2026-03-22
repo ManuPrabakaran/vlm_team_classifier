@@ -21,9 +21,9 @@ Baseline only — too weak on fine-grained details like logos and number fonts
 Florence-2
 ~50ms
 1.5GB
-Excellent
-Good
-Best for fine-grained region queries but too slow for per-frame use
+N/A (excluded)
+Poor
+Excluded — fixed task-token architecture has no contrastive embeddings, no cascade confidence signal, and no three-class output. Architectural mismatch with team classification.
 SigLIP
 ~15ms
 900MB
