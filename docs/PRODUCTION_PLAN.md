@@ -35,7 +35,8 @@ Run once per game before tipoff (~30 seconds, $0.04 in API cost):
    - Qwen2-VL 2B prompts (simple, direct language for the smaller model)
    - Qwen2-VL 7B prompts (detailed, multi-feature descriptions for the larger model)
 3. **Game difficulty scoring**: Compute from jersey color similarity, special jersey flags, arena lighting conditions. Stored as a float in [0, 1] — adjusts cascade thresholds for the entire game
-4. **Output**: Game context JSON containing descriptions, roster, difficulty score, and threshold overrides
+4. **Skin filter calibration**: Extract dominant hues from each team's jersey reference images. Compute overlap ratio with skin-tone HSV range (hue 0–20). If either team's jersey has >10% overlap (e.g., orange, red, tan jerseys), disable or narrow the skin filter for K-Means feature extraction. This prevents the improved K-Means from stripping jersey pixels on games where jersey colors fall in the skin-tone range — a validated overfitting risk caught during prototype evaluation (Knicks orange: 39.6% overlap)
+5. **Output**: Game context JSON containing descriptions, roster, difficulty score, skin filter config, and threshold overrides
 
 **Cost at scale**: 1000 games/day × $0.04 = $40/day for description generation. Negligible compared to GPU compute.
 
@@ -140,8 +141,10 @@ Reserved instance pricing is roughly equivalent to pay-per-use at this scale. Re
 
 ### Phase 1: Current Prototype (this submission)
 - K-Means → SigLIP → Qwen2-VL cascade
+- Improved K-Means via randomized hyperparameter search: 95.3% calibrated average (+16.7% over baseline)
+- Pre-game jersey-aware skin filter calibration using reference images
 - Manual tipoff calibration
-- Evaluated on 3 clips: SigLIP achieves 85.2% average, K-Means baseline 75.6%
+- Evaluated on 3 clips: SigLIP achieves 85.2% average, improved K-Means 95.3%
 
 ### Phase 2: Production Hardening (months 1-3)
 - Fine-tune SigLIP on accumulated production data (10K+ labeled crops)
@@ -149,6 +152,7 @@ Reserved instance pricing is roughly equivalent to pay-per-use at this scale. Re
 - Implement DeepSORT temporal consistency
 - TensorRT compilation for SigLIP
 - Automated tipoff detection (no manual frame selection)
+- **Continuous skin filter calibration**: Replace the binary enable/disable with a proportional response — the overlap ratio from the jersey scan becomes a continuous weight on filter aggressiveness (0% overlap → full filtering, 15% → narrowed hue range, 40%+ → disabled). Requires production data across many games to learn the optimal overlap-to-strength mapping; the current binary system is the safe starting point
 
 ### Phase 3: Model Distillation (months 3-6)
 - Distill Qwen2-VL knowledge into a faster specialist model
