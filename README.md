@@ -12,13 +12,26 @@ Each stage is progressively more expensive but more accurate. The cascade short-
 
 ## Results
 
-| Clip | K-Means Baseline | SigLIP | CLIP | Qwen2-VL 2B |
-|------|-----------------|--------|------|-------------|
-| clip1_easy (Celtics vs Heat) | 87.2% | **97.8%** | 84.8% | 54.3% |
-| clip2_hard (Spurs vs Grizzlies) | 52.8% | **86.0%** | 70.0% | 58.0% |
-| clip3_edge (Cavs vs Knicks) | 86.9% | **71.9%** | 78.1% | 56.2% |
+### Improved Cascade (K-Means → SigLIP → Qwen2-VL)
 
-SigLIP dominates across all clips. Full analysis in [docs/RESULTS.md](docs/RESULTS.md) and [notebooks/exploration.ipynb](notebooks/exploration.ipynb).
+| Clip | Accuracy | K-Means resolved | SigLIP needed | Qwen2-VL needed |
+|------|----------|------------------|---------------|-----------------|
+| clip1_easy (Celtics vs Heat) | **100.0%** | 91% | 9% | 0% |
+| clip2_hard (Spurs vs Grizzlies) | **94.0%** | 94% | 4% | 2% |
+| clip3_edge (Cavs vs Knicks) | **100.0%** | 100% | 0% | 0% |
+| **Average** | **98.0%** | **95%** | **5%** | **1%** |
+
+**2.0 ms/player avg latency** · **$0.71/game** · **17x cheaper than baseline cascade**
+
+The improved K-Means (tighter crop margins + skin filtering + deterministic init) resolves 95% of players at near-zero cost. SigLIP handles the remaining 5%. Full analysis in [docs/RESULTS.md](docs/RESULTS.md) and [notebooks/exploration.ipynb](notebooks/exploration.ipynb).
+
+### Standalone Model Comparison
+
+| Clip | K-Means Baseline | Improved K-Means | SigLIP | CLIP | Qwen2-VL 2B |
+|------|-----------------|-----------------|--------|------|-------------|
+| clip1_easy | 87.2% | 100.0% | 97.8% | 84.8% | 54.3% |
+| clip2_hard | 52.8% | 92.0% | 86.0% | 70.0% | 58.0% |
+| clip3_edge | 86.9% | 93.8% | 71.9% | 78.1% | 56.2% |
 
 ## Project Structure
 
