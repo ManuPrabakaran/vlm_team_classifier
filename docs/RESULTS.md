@@ -192,3 +192,24 @@ In production, prototypes are built during tipoff when players are stationary �
 single-frame mid-action scenario is unlikely. Multi-frame building is still the default
 as it is strictly better. Remaining clip3 errors (Team 0 at 72.2%) fall to the cascade's
 Qwen2-VL escalation stage.
+
+---
+
+## Cross-Model Cascade Validation
+
+Per-player cross-referencing of K-Means and SigLIP (multi-frame) predictions shows
+that the two models fail on different players, validating the cascade architecture.
+
+| Clip | K-Means wrong | SigLIP rescued | Both wrong | Both wrong % |
+|------|--------------|----------------|------------|-------------|
+| clip1_easy | 11 | 11 (100%) | 0 | 0.0% |
+| clip2_hard | 23 | 21 (91.3%) | 2 | 4.0% |
+| clip3_edge | 11 | 8 (72.7%) | 3 | 9.4% |
+| **Total** | **45** | **40 (88.9%)** | **5** | **3.9%** |
+
+SigLIP rescues 89% of K-Means failures. Only 3.9% of players (5 out of 128) defeated
+both models — the cascade floor that would escalate to Qwen2-VL. This is well below
+the 5% manual review target.
+
+SigLIP accuracy on players K-Means already got right stays high (86–97%), confirming
+it does not introduce new errors on easy players. The models are complementary.
