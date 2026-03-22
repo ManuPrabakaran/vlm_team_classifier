@@ -407,6 +407,28 @@ Ratio 1.8–2.0 hits the accuracy ceiling while keeping 95% of players in the ne
 
 ---
 
+## Scaling With Data: What This System Is Ready to Do
+
+### Prototype vs Production Data
+
+All results above are evaluated on 3 clips (128 valid detections) — the same clips used for hyperparameter discovery. There is no held-out test set. The 98.0% number is in-sample; the specific thresholds (ratio=2.0, sep=50) would shift on a broader game set.
+
+But the architecture is built for scale, and every mechanism has a clear scaling path. The 3-clip prototype proves the mechanisms work; production data unlocks their full potential.
+
+### What Opens Up With Hundreds of Clips
+
+**Proper difficulty stratification.** The cascade's core value is that it adapts — K-Means handles easy games at near-zero cost, SigLIP handles hard games accurately, Qwen2-VL reasons about the hardest edge cases. With 3 clips we can only gesture at this. With hundreds of games spanning every team matchup, lighting condition, and arena, we can build a proper difficulty distribution and prove that the cascade routes correctly across all of them. The game-level separation gate (which already correctly identifies clip2_hard as dangerous) becomes a validated decision boundary instead of a single data point.
+
+**Continuous skin filter calibration.** The current binary enable/disable (safe vs unsafe) is the conservative starting point — it works but leaves accuracy on the table for borderline cases. With production data across all 30 NBA teams' home/away/city/throwback jerseys, the binary flag becomes a continuous curve: jersey-hue overlap ratio maps to filter aggressiveness, learned from hundreds of real examples. The Knicks orange case (39.6% overlap → disabled) and the Grizzlies blue case (0.1% overlap → full filtering) are two points on a curve that needs dozens more to fit properly.
+
+**SigLIP fine-tuning.** Zero-shot SigLIP already hits 85.2% standalone and serves as an effective safety net in the cascade. But 10K+ labeled crops from production games would enable contrastive fine-tuning on basketball-specific visual features — jersey textures, logo placement, number fonts, sock patterns. The embedding space would learn that "Celtics green trim on white" and "Heat black with red accents" are maximally distant, rather than relying on generic visual similarity. This is where the tipoff calibration architecture pays off: every game generates free labeled examples that flow directly into the fine-tuning pipeline.
+
+**Failure mode discovery.** Three clips cannot surface every failure mode. White-vs-white international matchups, metallic All-Star jerseys, extreme backlighting, overhead camera angles, and warm-up gear over jerseys are all real scenarios the production system will face. Each one either validates an existing cascade stage or motivates a targeted fix — and the cascade architecture means fixes are additive (add a new stage or adjust a threshold) rather than requiring a full system redesign.
+
+**Threshold optimization with train/val/test.** The cascade has three tunable thresholds (separation gate, ratio gate, SigLIP margin). With enough data for a proper split — tune on 50 games, validate on 50, report on 50 held-out — these become validated operating points rather than best-guesses from 3 clips. The architecture stays identical; only the numbers move.
+
+---
+
 ## Referee Detection Strategy
 
 All accuracy numbers above are computed on team players only — referees (labeled `team_id = -1`
