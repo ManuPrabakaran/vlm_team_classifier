@@ -122,17 +122,17 @@ Per-frame processing at 30 FPS:
 ### Per-Game Compute Cost
 | Item | Cost |
 |------|------|
-| GPU compute (~12.5 min on H100 at $3/hr) | $0.63 |
+| GPU compute (~12.5 min on H100 at $2/hr) | $0.42 |
 | Pre-game description generation (GPT-4o) | $0.04 |
-| **Total per game** | **~$0.67** |
+| **Total per game** | **~$0.46** |
 
 ### At Scale (1000 games/day)
 | Item | Daily | Monthly |
 |------|-------|---------|
-| GPU compute | $630 | $18,900 |
+| GPU compute | $420 | $12,600 |
 | GPT-4o descriptions | $40 | $1,200 |
-| H100 reserved instances (9 GPUs) | $648 | $19,440 |
-| **Total** | **~$700** | **~$21,000** |
+| H100 reserved instances (9 GPUs) | $432 | $12,960 |
+| **Total** | **~$460** | **~$14,000** |
 
 Reserved instance pricing is roughly equivalent to pay-per-use at this scale. Reserved instances preferred for predictable load.
 
