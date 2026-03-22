@@ -170,3 +170,25 @@ Based on experimental results:
 
 The cascade architecture is validated: SigLIP alone improves average accuracy from
 75.6% to 85.2%, with the biggest gains on the hardest clip (52.8% → 86.0%).
+
+---
+
+## Prototype Quality Analysis
+
+Confidence calibration revealed that clip3_edge's low accuracy (71.9%) was caused by
+a weak prototype — only 2 players per team from a single frame. Team 0 was at 33.3%
+accuracy while Team 1 was at 100%, indicating a broken Team 0 centroid rather than a
+game-level or model-level failure.
+
+Switching to multi-frame prototypes (5 frames, crop quality filtering) improved results:
+
+| Clip | Single-frame | Multi-frame | Delta |
+|------|-------------|-------------|-------|
+| clip1_easy | 93.5% | 97.8% | +4.3% |
+| clip2_hard | 90.0% | 90.0% | — |
+| clip3_edge | 62.5% | 81.2% | +18.7% |
+
+In production, prototypes are built during tipoff when players are stationary — the
+single-frame mid-action scenario is unlikely. Multi-frame building is still the default
+as it is strictly better. Remaining clip3 errors (Team 0 at 72.2%) fall to the cascade's
+Qwen2-VL escalation stage.
