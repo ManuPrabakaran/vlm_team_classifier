@@ -348,3 +348,50 @@ production with DeepSORT tracking, most players are locked in after initial clas
 Only 2-3 uncertain players per frame need active classification, reducing effective
 per-frame latency by 70-80%. The ratio≥3.0 config at 191ms/frame becomes ~40-50ms/frame
 with tracking — well within the 100ms budget.
+
+---
+
+## Referee Detection Strategy
+
+All accuracy numbers above are computed on team players only — referees (labeled `team_id = -1`
+in ground truth) are excluded from evaluation. But in production, YOLO sends every detected
+person including referees, and the system must handle them.
+
+### The Insight: Referee Uniforms Are a Universal Constant
+
+Unlike team jerseys — which change per game (home/away, throwbacks, city editions, Christmas
+specials) — NBA referee uniforms are **identical across every game**: grey shirt with black
+vertical pinstripes, black pants. This is true across all 30 arenas, all season long.
+
+This transforms referee detection from a per-game classification problem into a **one-time
+known-template matching problem**. We build a fixed referee prototype once and deploy it
+forever — no per-game calibration, no tipoff dependency, no retraining.
+
+### Implementation: Fixed SigLIP Referee Prototype
+
+1. **Build once**: Collect ~20 reference images of NBA referee uniforms from multiple angles
+   (front, back, side, in motion). Extract SigLIP embeddings, compute centroid. Store as a
+   static constant.
+2. **Court position pre-filter**: Referees work the sidelines and baselines — they are rarely
+   positioned near the center of play. Ranking detections by x-coordinate and flagging those
+   near court edges pre-screens candidates before any embedding computation.
+3. **Cosine similarity check**: For referee candidates, compare SigLIP embedding against the
+   fixed referee prototype. A single dot product on a 768-dim vector — microseconds. If
+   similarity exceeds threshold → `team_id = -1`, skip entire classification cascade.
+4. **Bounded cardinality**: At most 3 referees on court (usually 2). Once matches are found,
+   stop searching — eliminates false positive risk.
+
+### Why This Matters for the Cascade
+
+Removing referees before classification has two benefits:
+- **Compute savings**: 2-3 fewer crops through K-Means/SigLIP/Qwen per frame
+- **Accuracy improvement**: Referee jersey colors (grey) can pollute K-Means cluster centroids
+  when they're close to a team's jersey color. Filtering referees first keeps the team clusters
+  clean.
+
+### Cross-Level Generalization
+
+Referee uniforms are standardized within each competition level (NBA, NCAA, high school), though
+the specific pattern differs between levels. Since Paloa knows the competition level from game
+metadata, the system loads the appropriate referee prototype during pre-game setup — one extra
+line in the game context JSON. The architecture is level-agnostic; only the template changes.

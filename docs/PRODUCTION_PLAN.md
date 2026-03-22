@@ -13,16 +13,17 @@
 
 ### Service Layout
 ```
-┌─────────────────────────────────────────────────┐
-│  Pre-game Service (CPU)                         │
-│  GPT-4o description generation + roster lookup  │
-└──────────────┬──────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  Pre-game Service (CPU)                              │
+│  GPT-4o descriptions + roster lookup                 │
+│  + referee prototype (fixed constant, loaded once)   │
+└──────────────┬───────────────────────────────────────┘
                │ game context JSON
-┌──────────────▼──────────────────────────────────┐
-│  Frame Processing Service (GPU)                 │
-│  YOLO → Cascade (K-Means → SigLIP → Qwen2-VL) │
-│  → DeepSORT tracking → Output                   │
-└─────────────────────────────────────────────────┘
+┌──────────────▼───────────────────────────────────────┐
+│  Frame Processing Service (GPU)                      │
+│  YOLO → Referee Filter → Cascade (K-Means → SigLIP  │
+│  → Qwen2-VL) → DeepSORT tracking → Output           │
+└──────────────────────────────────────────────────────┘
 ```
 
 ## 2. Pre-game Setup Pipeline
@@ -36,7 +37,8 @@ Run once per game before tipoff (~30 seconds, $0.04 in API cost):
    - Qwen2-VL 7B prompts (detailed, multi-feature descriptions for the larger model)
 3. **Game difficulty scoring**: Compute from jersey color similarity, special jersey flags, arena lighting conditions. Stored as a float in [0, 1] — adjusts cascade thresholds for the entire game
 4. **Skin filter calibration**: Extract dominant hues from each team's jersey reference images. Compute overlap ratio with skin-tone HSV range (hue 0–20). If either team's jersey has >10% overlap (e.g., orange, red, tan jerseys), disable or narrow the skin filter for K-Means feature extraction. This prevents the improved K-Means from stripping jersey pixels on games where jersey colors fall in the skin-tone range — a validated overfitting risk caught during prototype evaluation (Knicks orange: 39.6% overlap)
-5. **Output**: Game context JSON containing descriptions, roster, difficulty score, skin filter config, and threshold overrides
+5. **Referee prototype loading**: Load the pre-computed SigLIP referee embedding centroid — a fixed constant built once from reference images of NBA referee uniforms (grey shirt, black vertical stripes, black pants) captured from multiple angles. This prototype never changes between games because NBA referee uniforms are standardized across the entire league. Zero per-game cost; the prototype is a static asset loaded from disk
+6. **Output**: Game context JSON containing descriptions, roster, difficulty score, skin filter config, referee prototype, and threshold overrides
 
 **Cost at scale**: 1000 games/day × $0.04 = $40/day for description generation. Negligible compared to GPU compute.
 
@@ -47,10 +49,21 @@ Per-frame processing at 30 FPS:
 ### Stage 0: Detection
 - YOLO v8 detects all players → bounding boxes
 - Filter by confidence > 0.5, person class only
+- Typical output: 10 players + 2-3 referees per frame
+
+### Stage 0.5: Referee Filter (near-zero cost)
+NBA referee uniforms are **identical across every game** — the same grey shirt with black vertical stripes, black pants. Unlike team jerseys that change per game, referee uniforms are a universal constant. This transforms referee detection from a per-game classification problem into a one-time known-template matching problem.
+
+- **Court position pre-filter**: Rank all detections by x-coordinate. Referees work the sidelines and baselines — flag detections near court edges as referee candidates. This eliminates most team players from consideration before any computation
+- **SigLIP prototype comparison**: For candidates that pass the position filter, compute cosine similarity against the fixed referee prototype (a single dot product on a 768-dim vector — microseconds). The SigLIP embedding is already being extracted for team classification downstream, so this adds negligible cost
+- **Bounded search**: At most 3 referees on court (usually 2). Once 2-3 matches are found, stop — no more false positives possible
+- **Output**: Referee detections receive `team_id = -1` and are **excluded from the entire classification cascade**. This saves 2-3 crops worth of K-Means/SigLIP/Qwen compute per frame and prevents referee jersey colors from polluting team cluster centroids
+
+The referee prototype is built once from ~20 reference images of NBA referees from multiple angles (front, back, side, motion) and stored as a static constant. It never needs updating between games, seasons, or arenas.
 
 ### Stage 1: Pre-screening (near-zero cost)
 - **Cluster separation check**: If K-Means centroids too close (< 30 RGB units), force VLM escalation for all players
-- **Court position heuristic**: Relative x-position suggests team alignment. Down-weighted during transitions, free throws, jump balls
+- **Court position heuristic**: Rank remaining team players by x-coordinate. Players on the far left relative to others are either defensive for the left team or offensive for the right. Down-weighted during transitions, free throws, jump balls — returns a prior probability, not a hard assignment
 - **Temporal lock**: Players with N+ frames of consistent high-confidence classification skip the cascade entirely
 
 ### Stage 2: K-Means (< 1ms/crop)
@@ -152,6 +165,7 @@ Reserved instance pricing is roughly equivalent to pay-per-use at this scale. Re
 - Implement DeepSORT temporal consistency
 - TensorRT compilation for SigLIP
 - Automated tipoff detection (no manual frame selection)
+- **Referee prototype library**: Build separate SigLIP referee prototypes for each competition level — NBA (grey pinstripe), NCAA men's (black-white stripe with black raglan sleeves), NCAA women's (predominantly grey), and high school (traditional black-white stripes, varies by state association). The game metadata already specifies competition level; the pre-game pipeline loads the correct referee template automatically. Each prototype is built once from ~20 reference images per level and stored as a static constant — zero ongoing cost
 - **Continuous skin filter calibration**: Replace the binary enable/disable with a proportional response — the overlap ratio from the jersey scan becomes a continuous weight on filter aggressiveness (0% overlap → full filtering, 15% → narrowed hue range, 40%+ → disabled). Requires production data across many games to learn the optimal overlap-to-strength mapping; the current binary system is the safe starting point
 
 ### Phase 3: Model Distillation (months 3-6)

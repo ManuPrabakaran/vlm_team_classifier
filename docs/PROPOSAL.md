@@ -55,9 +55,20 @@ Cascade Architecture
 Stage 0 — Pre-game setup (zero runtime cost)
 Build jersey number lookup table, flag unique numbers. 
 Apply game risk score to tune cascade thresholds for the entire game.
-Stage 1 — Pre-screening (near zero cost)
+Stage 1 — Referee detection (near zero cost)
+A key insight: **NBA referee uniforms are identical across every game** — the same grey shirt with black vertical stripes, black pants, every arena, every season. Unlike team jerseys, which change per game (home/away, throwbacks, city editions), referee uniforms are a universal constant. This transforms referee detection from a per-game clustering problem into a one-time known-template matching problem that we solve once and deploy forever.
+
+We exploit this by building a **fixed referee prototype** — a pre-computed SigLIP embedding centroid from reference images of NBA referee uniforms, captured from multiple angles (front, back, side). This prototype is stored as a constant and never changes between games. Before any team classification begins, every YOLO detection is compared against the referee prototype via a single cosine similarity check (a dot product on a 768-dim vector — microseconds, effectively free since the SigLIP embedding is already being extracted for team classification downstream).
+
+Two filters make this extremely efficient:
+1. **Court position filter**: Referees work the sidelines and baselines — they are rarely positioned near the center of play. By ranking all detected players by x-coordinate and flagging those near the court edges, we can pre-filter candidates before any embedding computation. This repurposes the court position heuristic: instead of (unreliably) guessing which team a player is on based on spatial position, we use spatial position to identify the 2-3 people who are most likely referees — a much more tractable problem.
+2. **Bounded cardinality**: There are at most 3 referees on court (usually 2). Once we've found 2-3 referee matches, we stop checking — no more false positives possible.
+
+Detections flagged as referees receive `team_id = -1` and skip the entire classification cascade. This saves compute (2-3 fewer crops through K-Means/SigLIP/Qwen per frame) and prevents referees from polluting team cluster centroids.
+
+Stage 2 — Pre-screening (near zero cost)
  Before invoking any ML model, run three cheap checks:
-Court position heuristic: Players on the far left relative to all others are either defensive for the left team or offensive for the right. Identifying the player via number and appearance, then cross-referencing their known role from the roster, directly resolves which team they're on. Independent of color, lighting, and camera quality; down-weighted during transitions, free throws, and jump balls.
+Court position heuristic: Rank all detected players by x-coordinate relative to each other. Players on the far left are either defensive for the left team or offensive for the right. Cross-reference with known roster roles to resolve which team. Down-weighted during transitions, free throws, and jump balls — returns a prior probability, not a hard assignment.
 
 
 Cluster separation check: If K-Means centroids are too close together in RGB space, automatically flag all players for VLM escalation regardless of confidence score. Catches the navy-vs-black case before it reaches the classifier.
@@ -66,10 +77,10 @@ Cluster separation check: If K-Means centroids are too close together in RGB spa
 Lightweight facial re-identification: Not identity matching — just basic appearance features (skin tone, hair, build). Cheap; privacy-preserving continuity signal.
 
 
-Stage 2 — K-Means with calibrated confidence (fast): Run K-Means, derive confidence from centroid distance ratio. If confidence high AND separation wide AND court position agrees, done.
-Stage 3 — SigLIP embedding classification (moderate): Extract embeddings, compare against tipoff team profiles. Lock in if above threshold.
-Stage 4 — Qwen2-VL reasoning (expensive, rare): Ask targeted questions — jersey number, logo placement, stripe color. Cross-reference against roster. Build composite confidence.
-Stage 5 — Manual review queue (last resort): All stages below threshold → flag for human review. Target: reduce from 15-20% to under 5%.
+Stage 3 — K-Means with calibrated confidence (fast): Run K-Means on remaining team players (referees already removed), derive confidence from centroid distance ratio. If confidence high AND separation wide AND court position agrees, done.
+Stage 4 — SigLIP embedding classification (moderate): Extract embeddings, compare against tipoff team profiles. Lock in if above threshold.
+Stage 5 — Qwen2-VL reasoning (expensive, rare): Ask targeted questions — jersey number, logo placement, stripe color. Cross-reference against roster. Build composite confidence.
+Stage 6 — Manual review queue (last resort): All stages below threshold → flag for human review. Target: reduce from 15-20% to under 5%.
 Multi-Signal Composite Confidence Score
 Six independent signals weighted into a single composite score: K-Means color confidence, SigLIP embedding distance from team centroid, court position prior, jersey number lookup match, logo placement consistency, and lightweight facial re-ID. Weights calibrated empirically and adjusted by the game difficulty constant — hard games down-weight color, up-weight number and position. Each signal failing independently doesn't sink the whole classification.
 Why We Ruled Things Out / Why We Scaled Things Down
@@ -82,7 +93,7 @@ Temporal consistency via object tracking (DeepSORT/ByteTrack): Attach team ID to
 TensorRT/vLLM: For production deployment, compile SigLIP with TensorRT for additional 2-3x inference speedup on H100 hardware.
 5. Architecture Diagram
 
-Pre-game: roster lookup + unique number flagging + game difficulty constant. Runtime: YOLO bounding boxes → pre-screening (court position, cluster separation, facial re-ID, number lookup) → K-Means → SigLIP → Qwen2-VL → manual review queue → multi-signal confidence fusion → DeepSORT/ByteTrack identification continuity → output.
+Pre-game: roster lookup + unique number flagging + game difficulty constant + referee prototype (fixed, never changes). Runtime: YOLO bounding boxes → referee filter (SigLIP fixed prototype + sideline position, team_id=-1) → pre-screening (court position, cluster separation, facial re-ID, number lookup) → K-Means → SigLIP → Qwen2-VL → manual review queue → multi-signal confidence fusion → DeepSORT/ByteTrack identification continuity → output.
 6. Fallback Strategy
 The cascade thresholds are tuned by the pre-game risk score. To be explicit about escalation triggers:
 Stay with K-Means when: centroids are well-separated, confidence above 0.85, court position agrees, player has N+ frames of consistent classification.
@@ -90,7 +101,7 @@ Escalate to SigLIP when: K-Means confidence below 0.85, centroid separation belo
 Escalate to Qwen2-VL when: SigLIP confidence below 0.80, two players have similar embeddings with conflicting K-Means assignments, jersey number is potentially readable, or tipoff calibration window.
 Escalate to manual review when: all automated stages below threshold, conflicting signals with no clear winner, or novel jersey type with no roster data.
 Edge case handling:
-Referees — court position heuristic flags them as anomalous (fluid between halves), uniform stripes separate cleanly in K-Means, assigned team ID -1
+Referees — detected before any team classification via fixed SigLIP referee prototype (pre-computed from reference images of the standardized NBA referee uniform). Court position filter (sideline/baseline tendency) pre-screens candidates, and bounded cardinality (max 3 referees) prevents false positives. Referee uniforms are identical across all NBA games — this is a known-template problem solved once, not a per-game clustering problem. Assigned team ID -1 and excluded from the entire classification cascade
 Similar jerseys — cluster separation check forces automatic VLM escalation, number lookup becomes tiebreaker
 Special edition jerseys — VLM visual reasoning handles naturally, tipoff calibration captures them in team profile on first appearance
 7. Risk Assessment
